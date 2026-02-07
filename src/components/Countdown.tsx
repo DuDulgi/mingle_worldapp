@@ -30,19 +30,32 @@ export default function Countdown({
   className = '',
   label = '오늘 마감까지',
 }: CountdownProps) {
-  const end = endAt ?? getEndOfTodayUTC();
-  const [left, setLeft] = useState(end.getTime() - Date.now());
+  // 서버/클라이언트 초기 렌더를 동일하게 하기 위해 마운트 후에만 실제 시간 표시
+  const [mounted, setMounted] = useState(false);
+  const [left, setLeft] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const end = endAt ?? getEndOfTodayUTC();
+    const update = () => {
       const ms = end.getTime() - Date.now();
       setLeft(ms);
-      if (ms <= 0) clearInterval(t);
+      return ms;
+    };
+    update();
+    const t = setInterval(() => {
+      if (update() <= 0) clearInterval(t);
     }, 1000);
     return () => clearInterval(t);
-  }, [end]);
+  }, [mounted, endAt]);
 
-  const isOver = left <= 0;
+  const isOver = mounted && left <= 0;
+  const display = !mounted ? '00:00:00' : isOver ? '마감됨' : formatDHMS(left);
+
   return (
     <div className={`flex items-center gap-2 text-sm ${className}`}>
       <span className="text-[var(--text-muted)]" aria-hidden>⏳</span>
@@ -53,8 +66,9 @@ export default function Countdown({
             ? 'text-[var(--text-muted)]'
             : 'font-mono font-semibold text-[var(--debate)]'
         }
+        suppressHydrationWarning
       >
-        {isOver ? '마감됨' : formatDHMS(left)}
+        {display}
       </span>
     </div>
   );

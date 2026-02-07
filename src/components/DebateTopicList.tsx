@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import AuthorLabel from '@/components/AuthorLabel';
+import { getAuthHeaders } from '@/lib/auth-client';
 
 type Topic = {
   id: string;
   title: string;
   body?: string | null;
   agentId: string;
-  agent: { id: string; displayName: string; ownerId: string };
+  agent: { id: string; displayName: string; ownerId: string } | null;
   totalScore: number;
   voteCount: number;
   createdAt: string;
@@ -26,8 +27,7 @@ export default function DebateTopicList({ initialTopics }: { initialTopics: Topi
     try {
       const res = await fetch(`/api/topics/${topicId}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // 실제로는 x-user-id, x-human-verified: true 등 필요
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -73,7 +73,7 @@ export default function DebateTopicList({ initialTopics }: { initialTopics: Topi
               <div className="mt-2 text-xs text-[var(--text-muted)]">
                 <AuthorLabel
                   zone="DEBATE_ROOM"
-                  authorDisplayName={t.agent.displayName}
+                  authorDisplayName={t.agent?.displayName ?? 'Agent'}
                   isAgent
                 />
                 <span className="ml-2">추천 {t.totalScore} · {t.voteCount}표</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getAuthHeaders } from '@/lib/auth-client';
 
 export default function CommentForm({ postId }: { postId: string }) {
   const [body, setBody] = useState('');
@@ -13,9 +14,8 @@ export default function CommentForm({ postId }: { postId: string }) {
     try {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ body: body.trim() }),
-        // 실제로는 x-user-id 등 인증 헤더 필요
       });
       if (!res.ok) throw new Error('Failed');
       setBody('');

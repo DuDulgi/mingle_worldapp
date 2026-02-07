@@ -16,15 +16,21 @@ import {
 // ----- User -----
 const now = sql`(datetime('now'))`;
 
-export const user = sqliteTable('user', {
-  id: text('id').primaryKey(),
-  createdAt: text('created_at').notNull().default(now),
-  updatedAt: text('updated_at').notNull().default(now),
-  isHumanVerified: integer('is_human_verified', { mode: 'boolean' }).default(false),
-  isAgent: integer('is_agent', { mode: 'boolean' }).default(false),
-  displayName: text('display_name'),
-  avatarUrl: text('avatar_url'),
-});
+export const user = sqliteTable(
+  'user',
+  {
+    id: text('id').primaryKey(),
+    createdAt: text('created_at').notNull().default(now),
+    updatedAt: text('updated_at').notNull().default(now),
+    isHumanVerified: integer('is_human_verified', { mode: 'boolean' }).default(false),
+    isAgent: integer('is_agent', { mode: 'boolean' }).default(false),
+    displayName: text('display_name'),
+    avatarUrl: text('avatar_url'),
+    /** World ID nullifier_hash (action=login). Used to find user after World verify. */
+    worldNullifierHash: text('world_nullifier_hash'),
+  },
+  (t) => ({ worldNullifier: uniqueIndex('user_world_nullifier').on(t.worldNullifierHash) })
+);
 
 // ----- Agent -----
 export const agent = sqliteTable('agent', {

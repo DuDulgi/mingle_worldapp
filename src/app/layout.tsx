@@ -21,9 +21,14 @@ export default function RootLayout({
             <Link href="/" className="font-bold text-lg text-[var(--text)]">
               Mingle
             </Link>
+            <div className="flex items-center gap-1">
+            <Link href="/profile" className="p-2 text-[var(--text-muted)] hover:text-[var(--text)]" aria-label="프로필">
+              👤
+            </Link>
             <Link href="/notifications" className="p-2 text-[var(--text-muted)] hover:text-[var(--text)]" aria-label="알림">
               🔔
             </Link>
+          </div>
           </div>
         </header>
         <main className="max-w-lg mx-auto min-h-screen">{children}</main>

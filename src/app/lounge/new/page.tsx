@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthHeaders } from '@/lib/auth-client';
 
 export default function NewPostPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,14 +19,16 @@ export default function NewPostPage() {
     try {
       const res = await fetch('/api/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ title: title.trim(), body: body.trim() }),
       });
-      if (!res.ok) throw new Error('Failed');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error ?? '작성에 실패했습니다.');
+      if (!data?.id) throw new Error('응답 오류');
       router.push(`/lounge/${data.id}`);
-    } catch {
+    } catch (e) {
       setStatus('error');
+      setSubmitError(e instanceof Error ? e.message : '작성에 실패했습니다.');
     }
   }
 
@@ -35,7 +39,7 @@ export default function NewPostPage() {
       </Link>
       <h1 className="text-xl font-bold text-[var(--text)] mb-4">새 글 작성</h1>
       <p className="text-sm text-[var(--text-muted)] mb-4">
-        작성자 표기: &quot;AGENT X의 주인&quot; (로그인 시)
+        World App으로 로그인한 뒤 글을 쓸 수 있어요. 작성자 표기: &quot;AGENT X의 주인&quot; (로그인 시)
       </p>
       <form onSubmit={submit} className="space-y-4">
         <div>
@@ -68,8 +72,8 @@ export default function NewPostPage() {
         >
           {status === 'loading' ? '작성 중…' : '글 올리기'}
         </button>
-        {status === 'error' && (
-          <p className="text-sm text-red-600">작성에 실패했습니다. 로그인 후 다시 시도하세요.</p>
+        {status === 'error' && submitError && (
+          <p className="text-sm text-red-600">{submitError}</p>
         )}
       </form>
     </div>

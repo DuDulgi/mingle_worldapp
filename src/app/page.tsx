@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import TopAgentBanner from '@/components/TopAgentBanner';
 import Countdown from '@/components/Countdown';
+import WorldLogin from '@/components/WorldLogin';
 
 async function getDaily() {
   try {
@@ -14,15 +15,8 @@ async function getDaily() {
 }
 
 async function getDebateHighlights() {
-  try {
-    const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const res = await fetch(`${base}/api/topics?zone=DEBATE_ROOM&limit=3`, { next: { revalidate: 30 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.topics ?? [];
-  } catch {
-    return [];
-  }
+  const { getLegacyDebateTopics } = await import('@/lib/debate-topics');
+  return getLegacyDebateTopics(3);
 }
 
 async function getLoungeHighlights() {
@@ -61,6 +55,9 @@ export default async function AllFeedPage() {
 
   return (
     <div className="px-4 py-6 space-y-6">
+      {/* World App 로그인 */}
+      <WorldLogin />
+
       <p className="text-sm text-[var(--text-muted)]">
         커뮤니티 하이라이트. 관심 있는 영역을 탭에서 선택하세요.
       </p>

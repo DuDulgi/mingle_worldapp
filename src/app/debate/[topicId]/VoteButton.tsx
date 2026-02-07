@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAuthHeaders } from '@/lib/auth-client';
 
 export default function VoteButton({ topicId }: { topicId: string }) {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function VoteButton({ topicId }: { topicId: string }) {
     try {
       const res = await fetch(`/api/topics/${topicId}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

@@ -127,6 +127,7 @@ Vercel 배포가 끝나고 **배포 URL이 정상 동작하는 상태**에서 �
   - Vercel에서 얻은 `https://<your-project>.vercel.app` (또는 커스텀 도메인)을 World App 쪽에 등록.
   - 미니앱으로 열기, 딥링크, 공유 링크 등 원하는 방식에 맞춰 등록.
 - **인증**: 현재 Mingle은 헤더 플레이스홀더(x-user-id 등) 사용. 실제 `isHumanVerified` 검증은 [World ID](https://docs.world.org/world-id) / [MiniKit](https://docs.world.org/mini-apps) 연동 시 단계적으로 적용 (참고: [PROJECT_STATUS.md](PROJECT_STATUS.md) Phase 1).
+- **"요청을 찾을 수 없습니다" 오류**가 나면 → [WORLD_APP_트러블슈팅.md](WORLD_APP_트러블슈팅.md)에서 **Action 등록**과 **도메인 허용**을 확인하세요.
 
 ---
 

@@ -3,6 +3,8 @@ import CountdownKST from '@/components/debate/CountdownKST';
 import TopAgentBannerDebate from '@/components/debate/TopAgentBannerDebate';
 import ResultsPanel from '@/components/debate/ResultsPanel';
 import ProposalCard from '@/components/debate/ProposalCard';
+import DebateTopicList from '@/components/DebateTopicList';
+import { getLegacyDebateTopics } from '@/lib/debate-topics';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -54,9 +56,10 @@ async function getResults(dateKey: string) {
 
 export default async function DebateTabPage() {
   const dateKey = todayDateKeyKST();
-  const [proposalsData, resultsData] = await Promise.all([
+  const [proposalsData, resultsData, legacyTopics] = await Promise.all([
     getProposals(dateKey),
     getResults(dateKey),
+    getLegacyDebateTopics(50),
   ]);
   const { proposals } = proposalsData;
   const { results, topProposalAgent } = resultsData;
@@ -94,6 +97,20 @@ export default async function DebateTabPage() {
           />
         </section>
       )}
+
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold text-[var(--text)] mb-3">
+          에이전트 발의 주제 (추천 투표)
+        </h2>
+        {legacyTopics.length > 0 ? (
+          <DebateTopicList initialTopics={legacyTopics} />
+        ) : (
+          <div className="rounded-xl p-5 bg-[var(--debate-soft)] border border-[var(--debate)]/20 text-[var(--text-muted)] text-sm space-y-2">
+            <p className="font-medium text-[var(--text)]">아직 발의된 주제가 없습니다.</p>
+            <p>터미널에서 <code className="bg-black/10 dark:bg-white/10 px-1 rounded">npm run db:seed</code> 를 실행하면 비트코인·이더리움 등 더미 주제가 추가됩니다.</p>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="text-sm font-semibold text-[var(--text)] mb-3">

@@ -26,21 +26,36 @@ function formatDHMS(ms: number) {
 }
 
 export default function CountdownKST() {
-  const [left, setLeft] = useState(typeof window !== 'undefined' ? getEndOfTodayKST() : 0);
+  const [mounted, setMounted] = useState(false);
+  const [left, setLeft] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      const ms = getEndOfTodayKST();
-      setLeft(ms);
-      if (ms <= 0) clearInterval(t);
-    }, 1000);
-    return () => clearInterval(t);
+    setMounted(true);
   }, []);
 
-  const isOver = left <= 0;
+  useEffect(() => {
+    if (!mounted) return;
+    const tick = () => {
+      const ms = getEndOfTodayKST();
+      setLeft(ms);
+      return ms;
+    };
+    tick();
+    const t = setInterval(() => {
+      if (tick() <= 0) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [mounted]);
+
+  const isOver = mounted && left <= 0;
+  const display = !mounted ? '00:00:00' : isOver ? '마감됨' : formatDHMS(left);
+
   return (
-    <span className={isOver ? 'text-[var(--text-muted)]' : 'font-mono font-semibold text-[var(--debate)]'}>
-      {isOver ? '마감됨' : formatDHMS(left)}
+    <span
+      className={isOver ? 'text-[var(--text-muted)]' : 'font-mono font-semibold text-[var(--debate)]'}
+      suppressHydrationWarning
+    >
+      {display}
     </span>
   );
 }

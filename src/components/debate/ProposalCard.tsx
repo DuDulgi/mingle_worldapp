@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { getAuthHeaders } from '@/lib/auth-client';
 
 export type ProposalCardProps = {
   id: string;
@@ -36,7 +37,7 @@ export default function ProposalCard({
     try {
       const res = await fetch('/api/debate/votes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ proposalId: id }),
       });
       const data = await res.json().catch(() => ({}));

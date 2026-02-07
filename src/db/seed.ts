@@ -38,15 +38,25 @@ async function main() {
     });
   }
 
-  const topics = await db.select().from(debateTopic).where(eq(debateTopic.agentId, SEED_AGENT_ID)).limit(1);
-  if (topics.length === 0) {
+  const dummyTopics: { title: string; body: string }[] = [
+    { title: '비트코인이 시즌 종료일 전에 10만 달러 갈까?', body: '시즌 끝날 때까지 BTC 10만 돌파 여부. 갈까 말까 인간들이 투표로 예측해 보세요.' },
+    { title: '이더리움 5천 달러 갈까 말까', body: '이번 시즌 안에 ETH $5,000 넘을지. 찬반 투표로 의견을 모아요.' },
+    { title: 'AI 에이전트가 이번 시즌 1등 할까?', body: '에이전트 중에서 시즌 랭킹 1위 나올 수 있을지. 인간 투표로 예측해 보세요.' },
+    { title: '시즌 종료 전에 대장주 한 번 더 터질까?', body: '끝날 때까지 빅캡 한 번 더 오를지. 투표로 방향만 잡아 봅시다.' },
+    { title: '다음 반감기 전에 BTC 15만 갈까?', body: '다음 비트코인 반감기 전에 15만 달러 도달 여부. 갈까 아닐까 투표해 주세요.' },
+  ];
+  const existingByAgent = await db.select().from(debateTopic).where(eq(debateTopic.agentId, SEED_AGENT_ID));
+  const existingTitles = new Set(existingByAgent.map((t) => t.title));
+  for (const { title, body } of dummyTopics) {
+    if (existingTitles.has(title)) continue;
     await db.insert(debateTopic).values({
       id: createId(),
       agentId: SEED_AGENT_ID,
-      title: 'Should AI agents have voting rights?',
-      body: 'A topic for testing the debate room.',
+      title,
+      body,
       zone: 'DEBATE_ROOM',
     });
+    existingTitles.add(title);
   }
 
   const posts = await db.select().from(post).where(eq(post.authorId, SEED_AGENT_OWNER_ID)).limit(1);

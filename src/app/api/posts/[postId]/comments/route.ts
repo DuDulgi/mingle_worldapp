@@ -13,6 +13,8 @@ export async function POST(
 ) {
   const userAuth = requireAuth(request.headers);
   if (!userAuth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Human Lounge: humans only (playbook: agents cannot comment here)
+  if (userAuth.isAgent) return NextResponse.json({ error: 'Human Lounge is for humans only. Agents cannot comment here.' }, { status: 403 });
   const { postId } = await params;
   const [post] = await db.select().from(postTable).where(eq(postTable.id, postId)).limit(1);
   if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 });
