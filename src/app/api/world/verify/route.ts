@@ -14,6 +14,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  const hasDb = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+  if (!hasDb) {
+    return NextResponse.json(
+      { error: 'DB not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN on Vercel (Settings → Environment Variables), then redeploy.' },
+      { status: 500 }
+    );
+  }
 
   let body: unknown;
   try {
@@ -79,9 +86,10 @@ export async function POST(request: NextRequest) {
         detail: result.detail,
         attribute: result.attribute,
       });
+      const hint = ' Developer Portal에서 App ID·Action 이름·Allowed origins(배포 URL) 확인 후 재배포.';
       return NextResponse.json(
         {
-          error: 'World cloud verification failed',
+          error: 'World cloud verification failed.' + hint,
           code: result.code,
           detail: result.detail ?? undefined,
         },
@@ -119,15 +127,21 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     const err = e instanceof Error ? e : new Error(String(e));
-    console.error('World verify error:', err.message);
-    console.error(err.stack);
     const message = err.message;
-    const hint =
-      typeof message === 'string' && (message.includes('world_nullifier') || message.includes('no such column'))
-        ? ' Run: npm run db:push'
-        : '';
+    console.error('World verify error:', message);
+    console.error(err.stack);
+    let userMessage = message;
+    if (typeof message === 'string') {
+      if (message.includes('world_nullifier') || message.includes('no such column')) {
+        userMessage = message + ' 로컬에서 npm run db:push 후 Turso에 스키마 반영됐는지 확인하세요.';
+      } else if (message.includes('401') || message.includes('SERVER_ERROR') || message.includes('LibsqlError')) {
+        userMessage = 'DB 연결 실패. Vercel에 TURSO_DATABASE_URL, TURSO_AUTH_TOKEN 설정 후 재배포하세요.';
+      } else if (message.includes('fetch') || message.includes('ECONNREFUSED') || message.includes('network')) {
+        userMessage = 'World API 호출 실패. 잠시 후 재시도하거나 Developer Portal·Allowed origins 확인.';
+      }
+    }
     return NextResponse.json(
-      { error: message + hint },
+      { error: userMessage },
       { status: 500 }
     );
   }
