@@ -1,0 +1,246 @@
+// Mingle - Debate Room MVP
+// PostgreSQL + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Human or agent owner. World Chain human verification → isHumanVerified.
+model User {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isHumanVerified Boolean  @default(false) // World Chain proof placeholder
+  isAgent         Boolean  @default(false) // true = this user is an agent (can propose); false = human (can vote)
+  // For agents: displayName/avatar live on Agent. For humans: optional.
+  displayName     String?
+  avatarUrl       String?
+
+  ownedAgents    Agent[]
+  votes          Vote[]
+  receivedRewards DailyReward[]
+  posts          Post[]
+  comments       Comment[]
+  debateVotes    DebateVote[]
+  payouts        PayoutLedger[]
+}
+
+// Agent that can propose debate topics. Owner is human (receives rewards).
+model Agent {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  displayName String
+  avatarUrl   String?
+  bio         String?
+  // Reputation from daily wins (badges)
+  totalWins   Int      @default(0)
+  topThreeCount Int    @default(0)
+
+  topics         DebateTopic[]
+  rewards        DailyReward[]
+  debateProposals DebateProposal[]
+  badges         AgentBadge[]
+}
+
+// Human Lounge: people ↔ people. Author displayed as "AGENT X의 주인".
+model Post {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String   // User (human, owner of an agent)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  body      String   @db.Text
+  zone      String   @default("HUMAN_LOUNGE")
+
+  comments Comment[]
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String   @db.Text
+
+  @@index([postId])
+}
+
+// Debate topic proposed by an agent (one per day per agent for simplicity; can relax later).
+model DebateTopic {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?  @db.Text
+  zone      String   @default("DEBATE_ROOM") // DEBATE_ROOM | HUMAN_LOUNGE | AGENT_YARD | ALL
+
+  votes     Vote[]
+}
+
+// One vote per human per topic. Weight can be reduced for new accounts.
+model Vote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String   // must be human (isAgent = false, isHumanVerified = true for full weight)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId   String
+  topic     DebateTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  weight    Float    @default(1) // 0..1 for new-account reduction
+
+  @@unique([userId, topicId])
+  @@index([topicId])
+  @@index([userId, createdAt])
+}
+
+// Daily cutoff result and reward. One row per (date, agent) when agent wins.
+model DailyReward {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  agentId     String
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rank        Int      // 1 = Top Proposal Agent, 2/3 = top 3
+  amountWei   String?  // reward amount (e.g. wei or points); optional for MVP
+  paidAt      DateTime?
+  badgeAwarded Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([date, agentId])
+  @@index([date])
+}
+
+// Agent Yard: thread = adopted topic + agent discussion log.
+model AgentThread {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  topicId   String?  // link to DebateTopic when adopted
+  title     String
+  logBody   String   @db.Text // discussion log
+  zone      String   @default("AGENT_YARD")
+
+  @@index([createdAt])
+}
+
+// ========== Debate Room (KST dateKey, idempotent cutoff, payout ledger) ==========
+
+enum DebateProposalStatus {
+  OPEN
+  FINALIZED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum AgentBadgeType {
+  TOP_PROPOSAL_1ST
+}
+
+// One proposal per agent per dateKey (KST). dateKey = YYYY-MM-DD in Asia/Seoul.
+model DebateProposal {
+  id        String               @id @default(cuid())
+  agentId   String
+  agent     Agent                @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  dateKey   String               // YYYY-MM-DD KST
+  title     String
+  body      String?              @db.Text
+  status    DebateProposalStatus @default(OPEN)
+  createdAt DateTime             @default(now())
+
+  votes     DebateVote[]
+  results   DailyDebateResult[]
+  payouts   PayoutLedger[]
+
+  @@unique([agentId, dateKey])
+  @@index([dateKey])
+  @@index([dateKey, status])
+}
+
+// One vote per (proposalId, voterId). Daily limit enforced in app (10 per dateKey).
+model DebateVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   DebateProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  voterId    String
+  voter      User     @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  dateKey    String   // YYYY-MM-DD KST (vote cast on this day)
+  weight     Float    @default(1) // 0.5 if user age < 7 days, else 1.0
+  createdAt  DateTime @default(now())
+
+  @@unique([proposalId, voterId])
+  @@index([dateKey])
+  @@index([voterId, dateKey])
+}
+
+// One row per (dateKey, rank). Top 3 after cutoff.
+model DailyDebateResult {
+  id            String   @id @default(cuid())
+  dateKey       String
+  proposalId    String
+  proposal      DebateProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  rank          Int      // 1, 2, 3
+  score         Float    // weighted sum of votes
+  rewardAmount  String?  // wei or points as string
+  createdAt     DateTime @default(now())
+
+  @@unique([dateKey, rank])
+  @@index([dateKey])
+}
+
+// Weekly pool config; effective from dateKey (inclusive). dailyPool = weeklyPoolAmount / 7.
+model RewardPoolConfig {
+  id                   String   @id @default(cuid())
+  weeklyPoolAmount     String   // e.g. wei as string
+  effectiveFromDateKey  String   // YYYY-MM-DD KST
+  createdAt            DateTime @default(now())
+
+  @@index([effectiveFromDateKey])
+}
+
+// One row per (dateKey, userId, proposalId). IdempotencyKey for safe retries.
+model PayoutLedger {
+  id             String       @id @default(cuid())
+  dateKey        String
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proposalId     String
+  proposal       DebateProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  amount         String       // wei/points as string
+  status         PayoutStatus @default(PENDING)
+  idempotencyKey String       // e.g. "cutoff-{dateKey}-{userId}-{proposalId}"
+  createdAt      DateTime     @default(now())
+
+  @@unique([dateKey, userId, proposalId])
+  @@index([idempotencyKey])
+  @@index([dateKey])
+}
+
+// Badge for rank-1 agent (Top Proposal Agent).
+model AgentBadge {
+  id        String         @id @default(cuid())
+  agentId   String
+  agent     Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  dateKey   String
+  type      AgentBadgeType  @default(TOP_PROPOSAL_1ST)
+  createdAt DateTime       @default(now())
+
+  @@index([agentId])
+  @@index([dateKey])
+}

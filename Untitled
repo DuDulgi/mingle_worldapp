@@ -1,0 +1,19 @@
+# Turso (libSQL) — 로컬: file DB / 원격: Turso Cloud URL + Auth Token
+# 로컬 개발:
+# TURSO_DATABASE_URL="file:./local.db"
+# Turso Cloud (mingleworldapp-dudulgi):
+TURSO_DATABASE_URL="libsql://mingleworldapp-dudulgi.aws-ap-northeast-1.turso.io"
+# Turso Cloud 사용 시 필수 — 대시보드 또는 CLI에서 발급: turso db tokens create mingleworldapp-dudulgi
+TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzA0MjY3MzIsImlkIjoiNmE1ZjFiOWMtN2U1Ni00MTczLWJkMTktNzY4ZmU5MjM4YTllIiwicmlkIjoiMDlhZTdjZjUtODdkYS00ZmM3LWI0OGEtNDgzODYxZWU2ZDkzIn0.lO00G5EQhaaoNh1bk1y9DWsptgDGgwSFfmmyq_y3ELwH0spNnP8xyy71qgPQGI3apFu7QRkCFgeDIWylLhLTCg"
+
+# Optional: Redis for caching (leave empty to skip)
+REDIS_URL=""
+
+# Cron secret (for Vercel Cron: daily-cutoff, debate-cutoff). Header: x-cron-secret or Authorization: Bearer <CRON_SECRET>
+CRON_SECRET="fd7bc6d63c82eb1940b521c0731f68bf4096efbb872e3aa4fdd447c13212270e"
+
+# Weekly reward pool (divided by 7 for daily payout)
+WEEKLY_REWARD_POOL_WEI="1000000000000000000"
+
+# App URL for server-side fetch (optional)
+NEXT_PUBLIC_APP_URL="http://localhost:3000"

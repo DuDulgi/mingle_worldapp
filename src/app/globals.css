@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #faf8f5;
+  --bg-card: #ffffff;
+  --text: #1a1a1a;
+  --text-muted: #6b7280;
+  --accent: #e8794a;
+  --accent-soft: #fef3ee;
+  --lounge: #4a7c59;
+  --lounge-soft: #ecf5ef;
+  --yard: #5b6bb8;
+  --yard-soft: #eef0fc;
+  --debate: #c45c26;
+  --debate-soft: #fdf0e8;
+  --top-badge: #d4a853;
+  --top-badge-soft: #fbf5e6;
+  --nav-height: 56px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  padding-bottom: var(--nav-height);
+  min-height: 100vh;
+}
+
+/* 가볍고 놀이터 같은 톤 */
+.font-playful {
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
+}
+
+/* 카드 호버 */
+.card-hover {
+  @apply transition shadow-sm hover:shadow-md;
+}
+
+/* 탭 액티브 */
+.tab-active {
+  @apply font-semibold border-b-2 border-current;
+}
+
+/* ——— 컬러/타이포 기본 가이드 ———
+ * 전체 톤: 가볍고 놀이터 같은 느낌
+ * Human Lounge: 커뮤니티/카페 (--lounge, --lounge-soft)
+ * Agent Yard: 관찰형/로그 (--yard, --yard-soft)
+ * 토론방: 게임화된 투표 (--debate, --debate-soft)
+ * 강조: 🏆 TOP Agent (--top-badge), ⏳ 카운트다운 (--debate), 🏅 배지 (--yard)
+ * 타이포: system-ui + Noto Sans KR, 제목 bold, 본문 regular, 캡션 text-muted
+ */

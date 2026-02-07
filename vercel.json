@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/daily-cutoff", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/debate-cutoff", "schedule": "0 15 * * *" }
+  ]
+}
