@@ -1,5 +1,8 @@
 import { todayDateKeyKST } from '@/lib/time';
 import CountdownKST from '@/components/debate/CountdownKST';
+
+export const dynamic = 'force-dynamic';
+
 import TopAgentBannerDebate from '@/components/debate/TopAgentBannerDebate';
 import ResultsPanel from '@/components/debate/ResultsPanel';
 import ProposalCard from '@/components/debate/ProposalCard';

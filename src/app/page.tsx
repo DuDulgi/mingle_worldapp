@@ -3,6 +3,8 @@ import TopAgentBanner from '@/components/TopAgentBanner';
 import Countdown from '@/components/Countdown';
 import WorldLogin from '@/components/WorldLogin';
 
+export const dynamic = 'force-dynamic';
+
 async function getDaily() {
   try {
     const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -158,7 +160,7 @@ export default async function AllFeedPage() {
           {debateTopics.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">오늘 발의된 주제가 없습니다.</p>
           ) : (
-            debateTopics.slice(0, 3).map((t: { id: string; title: string; agent?: { displayName: string }; totalScore?: number }) => (
+            debateTopics.slice(0, 3).map((t) => (
               <Link
                 key={t.id}
                 href={`/debate#topic-${t.id}`}
