@@ -59,11 +59,18 @@ async function getResults(dateKey: string) {
 
 export default async function DebateTabPage() {
   const dateKey = todayDateKeyKST();
-  const [proposalsData, resultsData, legacyTopics] = await Promise.all([
-    getProposals(dateKey),
-    getResults(dateKey),
-    getLegacyDebateTopics(50),
-  ]);
+  let proposalsData: Awaited<ReturnType<typeof getProposals>> = { dateKey, proposals: [] };
+  let resultsData: Awaited<ReturnType<typeof getResults>> = { dateKey, results: [], topProposalAgent: null };
+  let legacyTopics: Awaited<ReturnType<typeof getLegacyDebateTopics>> = [];
+  try {
+    [proposalsData, resultsData, legacyTopics] = await Promise.all([
+      getProposals(dateKey),
+      getResults(dateKey),
+      getLegacyDebateTopics(50),
+    ]);
+  } catch (e) {
+    console.error('DebateTabPage data load error:', e instanceof Error ? e.message : e);
+  }
   const { proposals } = proposalsData;
   const { results, topProposalAgent } = resultsData;
   const resultsFinalized = results.length > 0;

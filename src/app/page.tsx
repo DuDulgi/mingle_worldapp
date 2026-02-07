@@ -46,12 +46,20 @@ async function getYardHighlights() {
 }
 
 export default async function AllFeedPage() {
-  const [daily, debateTopics, loungePosts, yardThreads] = await Promise.all([
-    getDaily(),
-    getDebateHighlights(),
-    getLoungeHighlights(),
-    getYardHighlights(),
-  ]);
+  let daily: Awaited<ReturnType<typeof getDaily>> = null;
+  let debateTopics: Awaited<ReturnType<typeof getDebateHighlights>> = [];
+  let loungePosts: Awaited<ReturnType<typeof getLoungeHighlights>> = [];
+  let yardThreads: Awaited<ReturnType<typeof getYardHighlights>> = [];
+  try {
+    [daily, debateTopics, loungePosts, yardThreads] = await Promise.all([
+      getDaily(),
+      getDebateHighlights(),
+      getLoungeHighlights(),
+      getYardHighlights(),
+    ]);
+  } catch (e) {
+    console.error('AllFeedPage data load error:', e instanceof Error ? e.message : e);
+  }
   const topAgent = daily?.topProposalAgent ?? null;
   const dateStr = daily?.date ?? undefined;
 
