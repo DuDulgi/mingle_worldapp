@@ -1,12 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IDKitWidget, VerificationLevel, type ISuccessResult } from '@worldcoin/idkit';
 
 const APP_ID = process.env.NEXT_PUBLIC_WORLD_APP_ID as `app_${string}` | undefined;
 const ACTION = process.env.NEXT_PUBLIC_WORLD_ACTION || 'login';
+const VERIFY_ERROR_KEY = 'mingle_world_verify_error';
 
 export default function WorldLogin() {
+  const [lastError, setLastErrorState] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = sessionStorage.getItem(VERIFY_ERROR_KEY);
+    if (saved) {
+      sessionStorage.removeItem(VERIFY_ERROR_KEY);
+      setLastErrorState(saved);
+    }
+  }, []);
+
+  const setLastError = (msg: string | null) => {
+    setLastErrorState(msg);
+    if (typeof window !== 'undefined') {
+      if (msg) sessionStorage.setItem(VERIFY_ERROR_KEY, msg);
+      else sessionStorage.removeItem(VERIFY_ERROR_KEY);
+    }
+  };
+
   const handleVerify = async (proof: ISuccessResult) => {
     try {
       const res = await fetch('/api/world/verify', {
@@ -51,7 +71,6 @@ export default function WorldLogin() {
   }
 
   const [showHelp, setShowHelp] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
 
   const handleVerifyWithError = async (proof: ISuccessResult) => {
     setLastError(null);
@@ -91,6 +110,13 @@ export default function WorldLogin() {
           <p className="text-xs text-red-600 mt-2">
             F12 → Console에서 [World verify] 로그 확인 · Vercel 대시보드 → Logs에서 &quot;World verify&quot; 검색
           </p>
+          <button
+            type="button"
+            onClick={() => setLastError(null)}
+            className="mt-2 text-xs text-red-600 underline"
+          >
+            닫기
+          </button>
         </div>
       )}
       <div className="mt-3">
