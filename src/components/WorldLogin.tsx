@@ -8,24 +8,29 @@ const ACTION = process.env.NEXT_PUBLIC_WORLD_ACTION || 'login';
 
 export default function WorldLogin() {
   const handleVerify = async (proof: ISuccessResult) => {
-    const res = await fetch('/api/world/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(proof),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[World verify]', res.status, data);
+    try {
+      const res = await fetch('/api/world/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proof),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[World verify]', res.status, data);
+        }
+        throw new Error(data?.error ?? '검증에 실패했습니다.');
       }
-      throw new Error(data?.error ?? '검증에 실패했습니다.');
-    }
-    if (typeof window !== 'undefined') {
-      if (data.token) localStorage.setItem('mingle_display_token', data.token);
-      if (data.userId) {
-        const { setStoredAuth } = await import('@/lib/auth-client');
-        setStoredAuth(data.userId, data.isHumanVerified === true);
+      if (typeof window !== 'undefined') {
+        if (data.token) localStorage.setItem('mingle_display_token', data.token);
+        if (data.userId) {
+          const { setStoredAuth } = await import('@/lib/auth-client');
+          setStoredAuth(data.userId, data.isHumanVerified === true);
+        }
       }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : typeof e === 'object' && e !== null && 'message' in e ? String((e as { message: unknown }).message) : '검증에 실패했습니다.';
+      throw new Error(message);
     }
   };
 

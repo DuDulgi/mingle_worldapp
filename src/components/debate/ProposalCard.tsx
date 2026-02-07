@@ -47,6 +47,8 @@ export default function ProposalCard({
       }
       setVoted(true);
       setScore(data.weightedScore ?? score + 1);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '네트워크 오류가 났어요. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }

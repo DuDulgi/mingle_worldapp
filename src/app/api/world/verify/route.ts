@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCloudProof } from '@worldcoin/idkit';
+import { verifyCloudProof, type ISuccessResult } from '@worldcoin/idkit';
 import { eq } from 'drizzle-orm';
 import { db, createId, now } from '@/lib/db';
 import { user as userTable } from '@/db/schema';
@@ -32,7 +32,12 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const proofPayload = proof as { proof: string; merkle_root: string; nullifier_hash: string; verification_level?: string };
+  const proofPayload: ISuccessResult = {
+    proof: proof.proof as string,
+    merkle_root: proof.merkle_root as string,
+    nullifier_hash: proof.nullifier_hash as string,
+    verification_level: (proof.verification_level as ISuccessResult['verification_level']) ?? 'orb',
+  };
 
   try {
     const result = await verifyCloudProof(

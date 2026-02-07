@@ -24,6 +24,8 @@ export default function VoteButton({ topicId }: { topicId: string }) {
       }
       setVoted(true);
       router.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '네트워크 오류가 났어요. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }

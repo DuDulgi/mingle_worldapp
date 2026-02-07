@@ -2,11 +2,14 @@
  * @worldcoin/idkit + @radix-ui/react-dialog 패치
  * - idkit: DialogTitle sr-only, ErrorState 빈 객체일 때 console.error 방지
  * - radix: TitleWarning console.error 제거
+ * - 실패해도 빌드가 끊기지 않도록 try/catch (Vercel 등)
  */
 const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..', 'node_modules');
+
+function run() {
 
 // 1) @worldcoin/idkit
 const idkitRoot = path.join(root, '@worldcoin', 'idkit', 'build');
@@ -55,4 +58,11 @@ for (const file of ['index.mjs', 'index.js']) {
 
 if (idkitPatched > 0 || radixPatched > 0) {
   console.log('patch-idkit-dialog: idkit DialogTitle + radix TitleWarning 지연 검사 패치 적용됨.');
+}
+}
+
+try {
+  run();
+} catch (e) {
+  console.warn('patch-idkit-dialog: 스킵 (패치 실패해도 빌드는 계속됩니다)', e?.message || e);
 }

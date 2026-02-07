@@ -77,9 +77,11 @@ Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**�
 
 | 변수 | 값 | 환경 |
 |------|-----|------|
-| `TURSO_DATABASE_URL` | `libsql://mingleworldapp-dudulgi.aws-ap-northeast-1.turso.io` | Production, Preview (필요 시) |
+| `TURSO_DATABASE_URL` | `libsql://...turso.io` 형태 URL | Production, Preview |
 | `TURSO_AUTH_TOKEN` | Turso에서 발급한 토큰 | Production, Preview |
 | `CRON_SECRET` | 위에서 정한 비밀 문자열 | Production (Cron 인증용) |
+| `NEXT_PUBLIC_WORLD_APP_ID` | Developer Portal 앱 ID (예: `app_xxx`) | Production, Preview |
+| `NEXT_PUBLIC_WORLD_ACTION` | 액션 이름 (예: `login`) | Production, Preview |
 
 **선택(권장)**
 
@@ -90,7 +92,16 @@ Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**�
 
 - 환경 변수 추가/수정 후 **Redeploy** 해야 반영됩니다.
 
-### 3.3 Cron 동작
+### 3.3 배포 실패 시 확인 (Build Failed)
+
+1. **Vercel 대시보드** → 해당 프로젝트 → **Deployments** → 실패한 배포 클릭 → **Building** 로그 끝부분의 **에러 메시지** 확인.
+2. **자주 나오는 원인**
+   - **환경 변수 누락**: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` 없으면 DB 사용 코드에서 실패할 수 있음. (빌드 시점에는 사용하지 않지만 런타임에서 사용.)
+   - **Node 버전**: Vercel은 기본 Node 18.x. 문제 시 프로젝트 **Settings → General → Node.js Version** 에서 20 선택 후 재배포.
+   - **postinstall 실패**: `scripts/patch-idkit-dialog.cjs` 가 실패해도 빌드는 계속되도록 되어 있음. 다른 postinstall/스크립트가 있다면 확인.
+3. **로컬에서 빌드 재현**: 터미널에서 `npm run build` 실행해 같은 에러가 나오는지 확인.
+
+### 3.4 Cron 동작
 
 - `vercel.json`에 이미 정의됨:
   - **daily-cutoff**: 매일 00:00 UTC → `/api/cron/daily-cutoff`

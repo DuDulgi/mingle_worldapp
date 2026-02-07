@@ -42,6 +42,9 @@ export default function DebateTopicList({ initialTopics }: { initialTopics: Topi
             : t
         )
       );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '네트워크 오류가 났어요. 다시 시도해 주세요.';
+      alert(msg);
     } finally {
       setLoading(null);
     }
