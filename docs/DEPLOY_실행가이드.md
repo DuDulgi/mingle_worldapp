@@ -49,9 +49,15 @@
 ```bash
 cd /Users/imhyeongjun/Downloads/WORLDAPP
 git init
-git branch -m main
+git branch -m main   # 기본 브랜치를 main으로 (Git 초기값은 master)
 git add .
 git commit -m "Prepare for deploy"
+```
+
+**이미 `git init`만 하고 `master`로 커밋했다면** — `main`으로 푸시하려면 먼저 브랜치 이름을 바꿉니다:
+```bash
+git branch -M main
+git push -u origin main
 ```
 
 ### 2.2 원격 저장소 연결 및 push
