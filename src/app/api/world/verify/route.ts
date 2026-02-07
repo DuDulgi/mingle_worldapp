@@ -11,11 +11,16 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      Allow: 'POST, OPTIONS',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      Allow: 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
+}
+
+/** GET: 워밍업용. Cron으로 5분마다 호출하면 콜드 스타트 완화. */
+export async function GET() {
+  return NextResponse.json({ ok: true, message: 'Use POST to verify proof' });
 }
 
 export async function POST(request: NextRequest) {

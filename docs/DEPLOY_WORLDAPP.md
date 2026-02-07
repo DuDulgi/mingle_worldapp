@@ -73,13 +73,14 @@
 
 ### 3.2 환경 변수 설정 (필수)
 
+**Cron·Redis 없이도** World 로그인·토론 등 핵심 기능은 동작합니다. 아래 필수만 넣으면 됩니다.
+
 Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**에서 아래를 추가합니다.
 
 | 변수 | 값 | 환경 |
 |------|-----|------|
 | `TURSO_DATABASE_URL` | `libsql://...turso.io` 형태 URL | Production, Preview |
 | `TURSO_AUTH_TOKEN` | Turso에서 발급한 토큰 | Production, Preview |
-| `CRON_SECRET` | 위에서 정한 비밀 문자열 | Production (Cron 인증용) |
 | `NEXT_PUBLIC_WORLD_APP_ID` | Developer Portal 앱 ID (예: `app_xxx`) | Production, Preview |
 | `NEXT_PUBLIC_WORLD_ACTION` | 액션 이름 (예: `login`) | Production, Preview |
 
@@ -89,6 +90,12 @@ Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**�
 |------|-----|------|
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | 배포 후 실제 도메인. 서버 fetch base URL. |
 | `WEEKLY_REWARD_POOL_WEI` | 예: `1000000000000000000` | 주간 보상 풀 (일일 1/7 지급). |
+
+**선택(Cron 사용 시에만)**
+
+| 변수 | 값 | 용도 |
+|------|-----|------|
+| `CRON_SECRET` | 강한 랜덤 문자열 | 일일/토론 컷오프 Cron(`/api/cron/*`) 인증. 없으면 해당 Cron 호출만 401. |
 
 - 환경 변수 추가/수정 후 **Redeploy** 해야 반영됩니다.
 
@@ -101,13 +108,20 @@ Vercel 대시보드 → 프로젝트 → **Settings → Environment Variables**�
    - **postinstall 실패**: `scripts/patch-idkit-dialog.cjs` 가 실패해도 빌드는 계속되도록 되어 있음. 다른 postinstall/스크립트가 있다면 확인.
 3. **로컬에서 빌드 재현**: 터미널에서 `npm run build` 실행해 같은 에러가 나오는지 확인.
 
-### 3.4 Cron 동작
+### 3.4 Cron 동작 (선택)
 
-- `vercel.json`에 이미 정의됨:
-  - **daily-cutoff**: 매일 00:00 UTC → `/api/cron/daily-cutoff`
-  - **debate-cutoff**: 매일 15:00 UTC (KST 00:00) → `/api/cron/debate-cutoff`
-- Vercel Cron은 **GET**으로 호출하므로, 두 라우트 모두 GET을 지원합니다.
-- `CRON_SECRET`이 설정되어 있어야 Cron 요청이 401 없이 처리됩니다.
+- Cron을 **설정하지 않아도** 앱(World 로그인, 토론 등)은 정상 동작합니다.
+- Cron을 쓰려면: `vercel.json`에 정의된 **daily-cutoff**(00:00 UTC), **debate-cutoff**(15:00 UTC)가 Vercel에 의해 호출됩니다. 이때 `CRON_SECRET`을 환경 변수에 넣어 두어야 401 없이 처리됩니다.
+- Redis는 이 프로젝트에서 **미사용**입니다(선택 사항만 .env에 있음).
+
+### 3.5 World verify 워밍업 (선택, 첫 로그인 30초+ 걸릴 때)
+
+- Vercel 서버리스는 **콜드 스타트** 때문에 첫 요청이 30초 넘게 걸릴 수 있습니다.
+- **워밍업**: 외부 Cron(예: [cron-job.org](https://cron-job.org))에서 **5분마다** 아래 URL을 GET으로 호출하면, 실제 로그인 시 함수가 워밍업된 상태일 가능성이 높아집니다.
+  ```
+  https://<your-project>.vercel.app/api/world/verify
+  ```
+  - 응답: `{ "ok": true, "message": "Use POST to verify proof" }` (인증 불필요)
 
 ---
 
@@ -147,7 +161,7 @@ Vercel 배포가 끝나고 **배포 URL이 정상 동작하는 상태**에서 �
 | 순서 | 단계 | 할 일 |
 |------|------|--------|
 | **0** | **World 로그인** | World App / 개발자 포털에서 로그인 (시작) |
-| 0 후 | 로컬 | `.env` DB·CRON_SECRET, `db:push`, `npm run build` |
+| 0 후 | 로컬 | `.env` DB·World 변수, `db:push`, `npm run build` (Cron 쓸 때만 CRON_SECRET) |
 | **1** | **Git** | 원격 저장소에 push (배포할 코드 반영) |
 | **2** | **Vercel** | 저장소 연결 → 환경 변수 설정 → 배포 |
 | 2 후 | 확인 | URL 접속·API 확인, NEXT_PUBLIC_APP_URL 재배포 반영, Cron 테스트(선택) |

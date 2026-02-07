@@ -27,13 +27,19 @@ export default function WorldLogin() {
     }
   };
 
+  const VERIFY_TIMEOUT_MS = 60000;
+
   const handleVerify = async (proof: ISuccessResult) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
     try {
       const res = await fetch('/api/world/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(proof),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         console.error('[World verify]', res.status, data);
@@ -47,7 +53,11 @@ export default function WorldLogin() {
         }
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : typeof e === 'object' && e !== null && 'message' in e ? String((e as { message: unknown }).message) : '검증에 실패했습니다.';
+      clearTimeout(timeoutId);
+      const isAbort = e instanceof Error && e.name === 'AbortError';
+      const message = isAbort
+        ? '요청 시간이 초과됐어요. 첫 로그인은 서버 준비로 1분 가까이 걸릴 수 있어요. 다시 시도해 주세요.'
+        : e instanceof Error ? e.message : typeof e === 'object' && e !== null && 'message' in e ? String((e as { message: unknown }).message) : '검증에 실패했습니다.';
       throw new Error(message);
     }
   };
@@ -103,6 +113,9 @@ export default function WorldLogin() {
           </button>
         )}
       </IDKitWidget>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">
+        첫 로그인은 서버 준비로 최대 1분 걸릴 수 있어요. 1분 넘으면 안내해 드려요.
+      </p>
       {lastError && (
         <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200" role="alert">
           <p className="text-sm font-medium text-red-800">검증 실패</p>
